@@ -39,6 +39,26 @@ real to say and do.
 `./app` is a thin Streamlit UI over the same Lakebase data, for a human to
 browse the same thing the agent can query.
 
+## Fastest path: RUN_ME_setup_databricks.py
+
+1. Create a Lakebase database instance by hand (Compute > Lakebase >
+   Create database instance) — the one step with no API, has to be a
+   click in the UI.
+2. Connect this repo to your Databricks workspace: **Repos** (or **Git
+   folders**) > Add repo > paste this repo's URL.
+3. Open `RUN_ME_setup_databricks.py` inside that repo folder in the
+   workspace and Run All, after filling in the widgets (Lakebase host/user,
+   and either a secret scope holding the password or the plaintext
+   fallback widget for a quick test).
+
+That one notebook applies the Lakebase schema, loads the real building
+data, uploads the knowledge base docs to a UC volume, builds the Vector
+Search index (by `%run`-ing `knowledge_base/build_vector_index.py`
+in-place), federates Lakebase into Unity Catalog, and registers all five
+UC function tools from `agent/register_tools.sql`. The one thing it
+can't do is build the Agent Bricks agent itself — that's UI-only, see
+`agent/agent_bricks_setup.md` for the last step.
+
 ## Folder guide
 
 | Folder | Role | Contains |
