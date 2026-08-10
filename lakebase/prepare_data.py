@@ -6,7 +6,7 @@ Source: https://github.com/DBishal13/surge-exposure (docs/data/*.geojson,
 docs/data/regions.json) -- eight coastal regions precomputed with the
 project's real pipeline (NOAA SLOSH storm-surge depth + Overture Maps
 building footprints; exposure_score = 0.6 * surge component + 0.4 * active
-flood component, see day2-vector-search/knowledge_docs/scoring_methodology.md).
+flood component, see ../knowledge_base/docs/scoring_methodology.md).
 
 This is real output from that pipeline, not synthetic data. Run this once
 to regenerate the CSVs in data/ before running load_data.py.

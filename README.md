@@ -1,58 +1,63 @@
 # Surge Exposure Advisor
 
-A Databricks AI Bootcamp project (Lakebase, Vector Search, Agent Bricks)
-built on top of my [surge-exposure](https://github.com/DBishal13/surge-exposure)
-pipeline — a real, publicly validated storm-surge exposure scoring system
-for coastal buildings.
+An Agent Bricks agent, built on Databricks, that answers questions about
+real storm-surge exposure data from my
+[surge-exposure](https://github.com/DBishal13/surge-exposure) pipeline —
+a publicly validated storm-surge exposure scoring system for coastal
+buildings.
 
 Where `surge-exposure` computes exposure scores from NOAA + Overture Maps
-data, this project makes that output conversational and operational: an
-agent that reports real exposure data, takes a real write action
-(flagging a building for inspection), and — because the source pipeline's
-validation study is unusually honest about its own limitations — can
-explain accurately how much to trust the number it just gave you.
+data, this agent makes that output conversational and operational: it
+reports real exposure data, takes a real write action (flagging a
+building for inspection), and — because the source pipeline's validation
+study is unusually honest about its own limitations — can explain
+accurately how much to trust the number it just gave you.
 
 ## Architecture
 
+The agent is the product; everything else exists to give it something
+real to say and do.
+
 ```
                  ┌─────────────────────────┐
-   reviewer   →  │  Streamlit app (Day 1)  │ ──┐
-                 └─────────────────────────┘   │
-                                                ▼
-                 ┌─────────────────────────┐   read regions/buildings,
-                 │   Lakebase (Postgres)   │◄──┤   write inspection flags
-                 │   regions, buildings,   │   │
-                 │   inspection_flags      │   │
-                 └─────────────────────────┘   │
-                                                │
-                 ┌─────────────────────────┐   │
-                 │  Vector Search index    │◄──┤ search_methodology
-                 │  (Day 2 knowledge_docs) │   │
-                 └─────────────────────────┘   │
-                                                │
-                 ┌─────────────────────────┐   │
-   chat user  →  │  Agent Bricks agent     │───┘  UC function tools:
-                 │  (Day 3)                │      get_region_summary, get_building_exposure,
-                 └─────────────────────────┘      list_high_exposure_buildings,
-                                                    flag_building_for_inspection, search_methodology
+                 │   Lakebase (Postgres)   │  regions, buildings,
+                 │      ./lakebase         │  inspection_flags
+                 └────────────┬────────────┘
+                               │ read / write
+                               ▼
+┌──────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐
+│ reviewer │ →  │      Agent Bricks       │ ←  │  Vector Search index    │
+│  (human) │    │        ./agent          │    │    ./knowledge_base     │
+└──────────┘    └────────────┬────────────┘    └─────────────────────────┘
+                               │
+                               ▼
+                 UC function tools: get_region_summary,
+                 get_building_exposure, list_high_exposure_buildings,
+                 flag_building_for_inspection, search_methodology
 ```
+
+`./app` is a thin Streamlit UI over the same Lakebase data, for a human to
+browse the same thing the agent can query.
 
 ## Folder guide
 
-| Folder | Day | Contains |
+| Folder | Role | Contains |
 |---|---|---|
-| [`day1-lakebase-app/`](./day1-lakebase-app) | 1 | Real data pulled from surge-exposure (7,717 buildings, 8 regions), Postgres schema, Streamlit review app |
-| [`day2-vector-search/`](./day2-vector-search) | 2 | Knowledge base built from the real validation study (methodology, r=0.37/r=0.52 findings, 8 documented limitations), notebook that builds the Vector Search index |
-| [`day3-agent/`](./day3-agent) | 3 | UC function tools, Agent Bricks setup guide, evaluation cases |
+| [`agent/`](./agent) | The agent | UC function tools, Agent Bricks setup guide, evaluation cases |
+| [`lakebase/`](./lakebase) | Data layer | Real data pulled from surge-exposure (7,717 buildings, 8 regions), Postgres schema, data-access code |
+| [`knowledge_base/`](./knowledge_base) | Retrieval | Docs built from the real validation study (methodology, r=0.37/r=0.52 findings, 8 documented limitations), notebook that builds the Vector Search index |
+| [`app/`](./app) | Human UI | Streamlit review app over the same Lakebase data |
 
-Recommended order: Day 1 → Day 2 → Day 3 (Day 3's tools depend on both).
-See each folder's README for exact setup steps.
+Build order is `lakebase` → `knowledge_base` → `agent` (the agent's tools
+depend on both existing first), but the repo is organized by what each
+piece *is*, not the order you build it in. See each folder's README for
+setup steps.
 
 ## The data is real, including the uncomfortable parts
 
-`day1-lakebase-app/data/*.csv` are generated by `prepare_data.py` directly
+`lakebase/data/*.csv` are generated by `lakebase/prepare_data.py` directly
 from the source repo's precomputed pipeline output — not hand-written or
-synthetic. The Day 2 knowledge base includes:
+synthetic. The knowledge base includes:
 
 - The real validation against 48,105 Hurricane Ian NFIP claims (moderate
   correlations: r=0.37 for claim frequency, r=0.52 for severity)
@@ -67,17 +72,18 @@ synthetic. The Day 2 knowledge base includes:
 
 ## Why this shape
 
-- **Same data layer for human and agent.** `db.py`'s functions are the
-  spec that became the UC function tools — the agent can't drift from
-  what the app itself does.
+- **Same data layer for human and agent.** `lakebase/db.py`'s functions
+  are the spec that became the UC function tools in `agent/` — the agent
+  can't drift from what the app itself does.
 - **Guardrails via omission.** There's no tool that can edit a building's
   score or delete a flag; the agent has no way to alter the underlying
   data regardless of how it's prompted.
 - **Retrieval grounding is testable with real stakes.** Because the
-  knowledge base states specific, real numbers, `eval_cases.md` can assert
-  the agent gives a *calibrated* answer (e.g. "moderate correlation," not
-  "validated" or "unreliable") rather than only checking that some answer
-  was given. Case 5 in particular tests whether the agent correctly
-  refuses to call a "none" score in New Orleans "safe," since that city's
-  real flood risk is riverine/pluvial, which this surge-only score doesn't
-  model — exactly the failure mode a less careful agent would fall into.
+  knowledge base states specific, real numbers, `agent/eval/eval_cases.md`
+  can assert the agent gives a *calibrated* answer (e.g. "moderate
+  correlation," not "validated" or "unreliable") rather than only checking
+  that some answer was given. Case 5 in particular tests whether the agent
+  correctly refuses to call a "none" score in New Orleans "safe," since
+  that city's real flood risk is riverine/pluvial, which this surge-only
+  score doesn't model — exactly the failure mode a less careful agent
+  would fall into.

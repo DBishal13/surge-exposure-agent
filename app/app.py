@@ -1,15 +1,19 @@
-"""Day 1 practical outcome: a simple application backed by Lakebase.
+"""A simple application backed by Lakebase.
 
 A Streamlit app for reviewing precomputed storm-surge exposure scores
 (from https://github.com/DBishal13/surge-exposure) region by region, and
 flagging individual buildings for follow-up inspection.
 
-Run with:
-    streamlit run app.py
+Run with (from the repo root):
+    streamlit run app/app.py
 """
+import sys
+from pathlib import Path
+
 import streamlit as st
 
-from db import flag_building, list_buildings, list_flags, list_regions, log_lookup, region_summary
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lakebase"))
+from db import flag_building, list_buildings, list_flags, list_regions, log_lookup, region_summary  # noqa: E402
 
 st.set_page_config(page_title="Surge Exposure Advisor", page_icon="[~]", layout="wide")
 st.title("Surge Exposure Advisor")

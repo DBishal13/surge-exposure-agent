@@ -1,7 +1,8 @@
 """Data-access layer for the Surge Exposure Advisor, backed by Lakebase.
 
-These functions are reused as-is for the Day 3 agent's tools, so the human
-app and the agent always see the same data through the same code path.
+These functions are mirrored by the agent's Unity Catalog function tools
+in ../agent/register_tools.sql, so the human app and the agent always see
+the same data through the same logic.
 """
 import os
 from contextlib import contextmanager

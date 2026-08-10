@@ -1,4 +1,4 @@
--- Day 1: Lakebase (managed Postgres) schema for the Surge Exposure Advisor.
+-- Lakebase (managed Postgres) schema for the Surge Exposure Advisor.
 --
 -- Loads the real precomputed output of https://github.com/DBishal13/surge-exposure
 -- (8 coastal regions, 7,717 buildings, NOAA SLOSH + Overture Maps derived
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS inspection_flags (
     resolved     BOOLEAN NOT NULL DEFAULT false
 );
 
--- Logs what the Day 3 agent gets asked, so usage patterns can be reviewed
+-- Logs what the agent gets asked, so usage patterns can be reviewed
 -- later (e.g. which regions/buildings get looked up most).
 CREATE TABLE IF NOT EXISTS lookup_log (
     id           SERIAL PRIMARY KEY,

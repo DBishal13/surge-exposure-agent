@@ -1,4 +1,4 @@
--- Day 3: register the agent's tools as Unity Catalog functions.
+-- Register the agent's tools as Unity Catalog functions.
 --
 -- Paste into a Databricks SQL editor / notebook connected to a Unity
 -- Catalog-enabled warehouse. Update catalog/schema names and the Lakebase
@@ -92,7 +92,7 @@ finally:
 $$;
 
 -- Tool 5: retrieve methodology / validation / limitations guidance from
--- the Day 2 vector index.
+-- the ../knowledge_base vector index.
 CREATE OR REPLACE FUNCTION search_methodology(query STRING)
 RETURNS TABLE (doc_id STRING, content STRING)
 COMMENT 'Searches the knowledge base for how the exposure score is computed, the real Hurricane Ian NFIP claims validation results, documented limitations, and which regions are covered. Always use this instead of general knowledge for methodology/accuracy questions.'

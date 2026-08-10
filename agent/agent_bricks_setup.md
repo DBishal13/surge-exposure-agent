@@ -1,4 +1,4 @@
-# Day 3 - Building the agent in Agent Bricks
+# Building the agent in Agent Bricks
 
 ## 1. Register the tools
 

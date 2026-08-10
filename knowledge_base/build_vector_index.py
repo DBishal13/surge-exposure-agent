@@ -1,5 +1,5 @@
 # Databricks notebook source
-# Day 2: Context engineering and a Databricks Vector Search index over the
+# Context engineering and a Databricks Vector Search index over the
 # surge-exposure knowledge base (methodology, real validation findings,
 # limitations, region coverage).
 #
@@ -7,20 +7,20 @@
 #   Import into your Databricks workspace as a notebook (Workspace > Import).
 #
 # What it does:
-#   1. Loads knowledge_docs/*.md (upload the folder to a UC volume first).
+#   1. Loads docs/*.md (upload the folder to a UC volume first).
 #   2. Chunks each doc and writes chunks to a Delta table with Change Data
 #      Feed enabled (required for a delta-sync Vector Search index).
 #   3. Creates a Vector Search endpoint and delta-sync index using a
 #      Databricks-hosted embedding model.
 #   4. Runs example similarity queries grounded in the real numbers in the
 #      corpus, so retrieval quality is checked against known-correct answers
-#      before Day 3 wires this into the agent.
+#      before the agent (../agent) relies on this index.
 
 # COMMAND ----------
 
 dbutils.widgets.text("catalog", "main", "Unity Catalog catalog")
 dbutils.widgets.text("schema", "surge_exposure", "Schema")
-dbutils.widgets.text("volume_path", "/Volumes/main/surge_exposure/knowledge_docs", "Volume path with the .md docs")
+dbutils.widgets.text("volume_path", "/Volumes/main/surge_exposure/knowledge_base", "Volume path with the .md docs")
 dbutils.widgets.text("vs_endpoint", "surge_exposure_vs_endpoint", "Vector Search endpoint name")
 
 CATALOG = dbutils.widgets.get("catalog")
