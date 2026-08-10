@@ -1,0 +1,9 @@
+slug,label,bbox_west,bbox_south,bbox_east,bbox_north,building_count
+south-beach-miami,"South Beach, Miami, FL",-80.14,25.765,-80.125,25.8,1000
+clearwater-beach,"Clearwater Beach, FL",-82.835,27.965,-82.815,27.985,717
+fort-myers-beach,"Fort Myers Beach, FL",-81.965,26.435,-81.93,26.47,1000
+french-quarter-nola,"French Quarter, New Orleans, LA",-90.075,29.955,-90.055,29.97,1000
+galveston-seawall,"Galveston Seawall, TX",-94.82,29.28,-94.78,29.3,1000
+charleston-battery,"Charleston Battery, SC",-79.945,32.76,-79.92,32.79,1000
+outer-banks-nags-head,"Nags Head, Outer Banks, NC",-75.665,35.93,-75.61,35.98,1000
+ocean-city-md,"Ocean City, MD",-75.1,38.32,-75.075,38.36,1000
