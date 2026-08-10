@@ -9,6 +9,7 @@ import csv
 import os
 
 import psycopg2
+import psycopg2.extras
 
 
 def _connect():
@@ -28,10 +29,11 @@ def load_regions(cur) -> int:
             (r["slug"], r["label"], r["bbox_west"], r["bbox_south"], r["bbox_east"], r["bbox_north"], r["building_count"])
             for r in csv.DictReader(f)
         ]
-    cur.executemany(
+    psycopg2.extras.execute_values(
+        cur,
         """
         INSERT INTO regions (slug, label, bbox_west, bbox_south, bbox_east, bbox_north, building_count)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES %s
         ON CONFLICT (slug) DO UPDATE SET
             label = EXCLUDED.label, building_count = EXCLUDED.building_count
         """,
@@ -50,14 +52,16 @@ def load_buildings(cur) -> int:
             )
             for r in csv.DictReader(f)
         ]
-    cur.executemany(
+    psycopg2.extras.execute_values(
+        cur,
         """
         INSERT INTO buildings (building_id, region_slug, lon, lat, height_m, surge_class, surge_ft, flood_active, exposure_score, exposure_category)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES %s
         ON CONFLICT (building_id) DO UPDATE SET
             exposure_score = EXCLUDED.exposure_score, exposure_category = EXCLUDED.exposure_category
         """,
         rows,
+        page_size=1000,
     )
     return len(rows)
 

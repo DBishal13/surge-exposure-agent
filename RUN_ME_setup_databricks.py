@@ -10,12 +10,20 @@
 #      "Databricks notebook source" header above and treats it as a
 #      notebook automatically.
 #   3. Before running: create a Lakebase database instance (Compute >
-#      Lakebase > Create database instance) -- that one step still has to
-#      be done by hand in the UI, there's no API call for it yet. Then
-#      store its password as a secret (see widgets below) rather than
+#      Lakebase > Create database instance) -- on Free Edition this has to
+#      be done by hand in the UI; the API path is quota-blocked
+#      ("you have hit the workspace limit") even on a brand new workspace.
+#      Then store its password as a secret (see widgets below) rather than
 #      typing it in here.
 #   4. Fill in the widgets (Run > "Run all" once, or use the widget bar at
 #      the top after the first run creates them) and Run All.
+#
+# There is also a CLI-driven equivalent of most of this -- see
+# scripts/setup_databricks.py, which runs from your local machine via the
+# Databricks CLI/SDK instead of from inside a Databricks notebook. That
+# script is what was actually used to provision this project's workspace
+# resources (everything except the Lakebase instance itself, which is
+# API-quota-blocked on Free Edition and had to be created via the UI).
 #
 # What this notebook does NOT do: build the Agent Bricks agent itself.
 # That's still a UI step -- see agent/agent_bricks_setup.md. Everything
@@ -24,7 +32,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "main", "Unity Catalog catalog")
+dbutils.widgets.text("catalog", "workspace", "Unity Catalog catalog")
 dbutils.widgets.text("schema", "surge_exposure", "Schema")
 dbutils.widgets.text("volume_name", "knowledge_base", "UC volume name for the knowledge base docs")
 dbutils.widgets.text("vs_endpoint", "surge_exposure_vs_endpoint", "Vector Search endpoint name")
@@ -201,9 +209,16 @@ with open(os.path.join(REPO_ROOT, "agent", "register_tools.sql"), "r", encoding=
 # Skip the leading comment block with the Lakehouse Federation example
 # (step 4 above already did that for real) and start from the first
 # executable statement.
-tools_sql = tools_sql.split("USE CATALOG main;", 1)[-1]
+tools_sql = tools_sql.split("USE CATALOG workspace;", 1)[-1]
 tools_sql = f"USE CATALOG {CATALOG};\nCREATE SCHEMA IF NOT EXISTS {SCHEMA};\nUSE SCHEMA {SCHEMA};\n" + tools_sql.split("USE SCHEMA surge_exposure;", 1)[-1]
-tools_sql = tools_sql.replace("main.surge_exposure.knowledge_chunks_index", f"{CATALOG}.{SCHEMA}.knowledge_chunks_index")
+tools_sql = tools_sql.replace("workspace.surge_exposure.knowledge_chunks_index", f"{CATALOG}.{SCHEMA}.knowledge_chunks_index")
+
+# flag_building_for_inspection's body has {{LAKEBASE_HOST}}/{{LAKEBASE_USER}}/
+# {{LAKEBASE_PASSWORD}} placeholders (the tracked .sql file never contains
+# the literal password) -- substitute from the env vars step 0 already set.
+tools_sql = tools_sql.replace("{{LAKEBASE_HOST}}", os.environ["LAKEBASE_HOST"])
+tools_sql = tools_sql.replace("{{LAKEBASE_USER}}", os.environ["LAKEBASE_USER"])
+tools_sql = tools_sql.replace("{{LAKEBASE_PASSWORD}}", os.environ["LAKEBASE_PASSWORD"])
 
 executed = 0
 for stmt in split_sql_statements(tools_sql):

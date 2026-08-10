@@ -53,3 +53,21 @@ CREATE TABLE IF NOT EXISTS lookup_log (
     query_value  TEXT NOT NULL,       -- region slug, building_id, or filter description
     result_count INT
 );
+
+-- One row per region, refreshed by lakebase/spark_current_conditions.py:
+-- the precomputed building exposure aggregate joined with a live water
+-- level reading from the nearest NOAA CO-OPS tide station. Precomputed
+-- (rather than queried live on every agent turn) so the agent tool that
+-- reads this stays fast and doesn't depend on NOAA's API being up.
+CREATE TABLE IF NOT EXISTS current_conditions (
+    region_slug         TEXT PRIMARY KEY REFERENCES regions(slug),
+    label                TEXT NOT NULL,
+    building_count       INT NOT NULL,
+    avg_exposure_score   DOUBLE PRECISION NOT NULL,
+    high_exposure_count  INT NOT NULL,
+    noaa_station_id      TEXT NOT NULL,
+    noaa_station_name    TEXT NOT NULL,
+    water_level_ft       DOUBLE PRECISION,
+    observed_at          TIMESTAMPTZ,
+    pipeline_run_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);

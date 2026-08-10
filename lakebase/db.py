@@ -4,6 +4,7 @@ These functions are mirrored by the agent's Unity Catalog function tools
 in ../agent/register_tools.sql, so the human app and the agent always see
 the same data through the same logic.
 """
+import base64
 import os
 from contextlib import contextmanager
 from typing import Optional
@@ -12,13 +13,31 @@ import psycopg2
 import psycopg2.extras
 
 
+def _password() -> str:
+    """LAKEBASE_PASSWORD directly for local runs (from .env); when running
+    as a Databricks App there's no .env, so fetch it from the workspace
+    secret scope named by LAKEBASE_SECRET_SCOPE/LAKEBASE_SECRET_KEY instead,
+    using the app's own Databricks identity (see app/app.yaml)."""
+    password = os.environ.get("LAKEBASE_PASSWORD")
+    if password:
+        return password
+    from databricks.sdk import WorkspaceClient
+
+    w = WorkspaceClient()
+    secret = w.secrets.get_secret(
+        scope=os.environ.get("LAKEBASE_SECRET_SCOPE", "surge_exposure"),
+        key=os.environ.get("LAKEBASE_SECRET_KEY", "lakebase_password"),
+    )
+    return base64.b64decode(secret.value).decode("utf-8")
+
+
 def _connection_params() -> dict:
     return {
         "host": os.environ["LAKEBASE_HOST"],
         "port": os.environ.get("LAKEBASE_PORT", "5432"),
         "dbname": os.environ.get("LAKEBASE_DATABASE", "databricks_postgres"),
         "user": os.environ["LAKEBASE_USER"],
-        "password": os.environ["LAKEBASE_PASSWORD"],
+        "password": _password(),
         "sslmode": os.environ.get("LAKEBASE_SSLMODE", "require"),
     }
 

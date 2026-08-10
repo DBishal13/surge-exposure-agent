@@ -24,12 +24,18 @@ agent's tools and the review app both read and write.
    python prepare_data.py   # re-pulls the 8 regions from the source repo
    python -m dotenv run -- python load_data.py
    ```
+6. Run the Spark pipeline (`spark_current_conditions.py`) at least once --
+   import it as a Databricks notebook, or submit it as a one-time job (see
+   the repo root README's CLI-driven section) -- so `current_conditions`
+   is populated before the agent's `get_current_conditions` tool has
+   anything to read.
 
 ## What's here
 
 - `schema.sql` — `regions`, `buildings` (the precomputed exposure scores),
-  `inspection_flags` (the one write path), `lookup_log` (agent usage
-  tracking).
+  `inspection_flags` (the one write path), `current_conditions`
+  (region-level aggregates joined with a live NOAA tide reading, refreshed
+  by the Spark pipeline below), `lookup_log` (agent usage tracking).
 - `db.py` — the data-access layer: reads (region summaries, building
   lookups, high-exposure scans) and writes (inspection flags). Both
   `../app/app.py` and the logic behind `../agent/register_tools.sql`
@@ -37,6 +43,17 @@ agent's tools and the review app both read and write.
   apart on what a "region summary" or "flag" means.
 - `prepare_data.py` / `load_data.py` — pull real data from the source repo
   and load it into Lakebase.
+- `spark_current_conditions.py` — the project's actual Spark data
+  pipeline: reads `buildings`/`regions` from Lakebase via Spark's native
+  `postgresql` data source, aggregates per region, joins in a live reading
+  from the nearest NOAA CO-OPS tide station for each of the 8 regions
+  (third-party API, no key required), and writes the result back to
+  `current_conditions`. Two things learned running this for real: generic
+  `spark.read.jdbc`/`df.write.jdbc` are read-only on serverless compute
+  (`UNSUPPORTED_DATA_SOURCE_WRITE` on write -- use `format("postgresql")`
+  for both directions instead), and importing `psycopg2` inside a
+  serverless notebook crashed the Python kernel outright (SIGABRT) --
+  avoid it there and use the native connector for writes too.
 
 ## Data provenance
 

@@ -1,0 +1,18 @@
+command:
+  - "bash"
+  - "-c"
+  - "streamlit run app/app.py --server.port $DATABRICKS_APP_PORT --server.address 0.0.0.0 --server.headless true"
+
+env:
+  - name: LAKEBASE_HOST
+    value: "ep-delicate-wildflower-d8ap4lof.database.us-east-2.cloud.databricks.com"
+  - name: LAKEBASE_PORT
+    value: "5432"
+  - name: LAKEBASE_DATABASE
+    value: "databricks_postgres"
+  - name: LAKEBASE_USER
+    value: "surge-exposure"
+  - name: LAKEBASE_SECRET_SCOPE
+    value: "surge_exposure"
+  - name: LAKEBASE_SECRET_KEY
+    value: "lakebase_password"

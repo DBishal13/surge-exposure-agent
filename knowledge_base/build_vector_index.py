@@ -18,9 +18,9 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "main", "Unity Catalog catalog")
+dbutils.widgets.text("catalog", "workspace", "Unity Catalog catalog")
 dbutils.widgets.text("schema", "surge_exposure", "Schema")
-dbutils.widgets.text("volume_path", "/Volumes/main/surge_exposure/knowledge_base", "Volume path with the .md docs")
+dbutils.widgets.text("volume_path", "/Volumes/workspace/surge_exposure/knowledge_base", "Volume path with the .md docs")
 dbutils.widgets.text("vs_endpoint", "surge_exposure_vs_endpoint", "Vector Search endpoint name")
 
 CATALOG = dbutils.widgets.get("catalog")
@@ -67,12 +67,31 @@ print(f"Prepared {len(rows)} chunks from {len(glob.glob(os.path.join(VOLUME_PATH
 
 # COMMAND ----------
 # Step 2: write chunks to a Delta table with Change Data Feed enabled.
+#
+# Deletion Vectors + Row Tracking are ON by default for new Unity Catalog
+# managed tables, and silently stall Vector Search's delta-sync index
+# creation (it sits at "pending endpoint provisioning" forever, even once
+# the endpoint itself is ONLINE) -- disable both explicitly. CREATE OR
+# REPLACE (via overwriteSchema) rather than a plain overwrite so a table
+# created before this fix gets its properties reset too.
 
 from pyspark.sql import Row
 
 df = spark.createDataFrame([Row(**r) for r in rows])
-df.write.mode("overwrite").option("delta.enableChangeDataFeed", "true").saveAsTable(SOURCE_TABLE)
-spark.sql(f"ALTER TABLE {SOURCE_TABLE} SET TBLPROPERTIES (delta.enableChangeDataFeed = true)")
+(
+    df.write.mode("overwrite")
+    .option("overwriteSchema", "true")
+    .option("delta.enableChangeDataFeed", "true")
+    .option("delta.enableDeletionVectors", "false")
+    .option("delta.enableRowTracking", "false")
+    .saveAsTable(SOURCE_TABLE)
+)
+spark.sql(f"""
+    ALTER TABLE {SOURCE_TABLE} SET TBLPROPERTIES (
+        delta.enableChangeDataFeed = true,
+        delta.enableDeletionVectors = false
+    )
+""")
 
 display(spark.table(SOURCE_TABLE))
 

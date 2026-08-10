@@ -3,11 +3,14 @@
 ## Setup
 
 1. Upload `docs/` to a Unity Catalog volume, e.g.
-   `/Volumes/main/surge_exposure/knowledge_base` (Catalog Explorer > your
-   catalog > Create volume, then upload the `.md` files, or
-   `databricks fs cp -r docs dbfs:/Volumes/main/surge_exposure/knowledge_base`).
+   `/Volumes/workspace/surge_exposure/knowledge_base` (Catalog Explorer >
+   your catalog > Create volume, then upload the `.md` files, or
+   `databricks fs cp -r docs dbfs:/Volumes/workspace/surge_exposure/knowledge_base`).
 2. Import `build_vector_index.py` into Databricks as a notebook and run it
-   top to bottom, adjusting the widgets if you used different names.
+   top to bottom, adjusting the widgets if you used different names --
+   or run `build_vector_index_cli.py` from your local machine instead
+   (see the repo root README's CLI-driven section); that script reads
+   `docs/` directly off disk, so it doesn't need the volume upload step.
 
 ## What's here
 
